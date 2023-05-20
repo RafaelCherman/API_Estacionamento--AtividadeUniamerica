@@ -119,7 +119,7 @@ public class MovimentacaoService {
         int umDiaS = 86400;
         Configuracao objetoConfig = configuracaoRepository.getConfig();
         int tempoEstacionado = 0;
-        int tempoForaMulta = 0;
+        int tempoNoExpediente = 0;
         int tempoNaMulta = 0;
         boolean c = true;
 
@@ -145,23 +145,11 @@ public class MovimentacaoService {
             tempoEntradaFim = umDiaS - tempoEntradaFim;
         }
 
-        tempoEstacionado = tempoEntradaFim;
-
 
         tempoEstacionado = ((int) Duration.between(movimentacao.getEntrada(), movimentacao.getSaida()).getSeconds());
 
 
-        System.out.println("\n\nExpediente: "+tempoDeExpediente+"\n\nFora de Expediente: "+tempoForaDeExpediente+"\n\nDias estacioado: "+diasEstacionado+"\n\n");
-        System.out.println(" entre saida e inicio "+ tempoSaidaInicio +"\n\n");
-        System.out.println(" tempoForaDeExpediente - tempoSaidaInicio "+ (tempoForaDeExpediente - tempoSaidaInicio) +"\n\n");
-
-        System.out.println(" entre entrada e fim "+ tempoEntradaFim +"\n\n");
-        System.out.println(" tempoDeExpediente - tempoEntradaFim "+ (tempoDeExpediente - tempoEntradaFim) +"\n\n");
-
-        System.out.println(" tempoForaDeExpediente - tempoEntradaFim "+ (tempoForaDeExpediente - tempoEntradaFim) +"\n\n");
-
-
-
+        //IFs para movimentações improvaveis, porem não está 100%
         if(movimentacao.getEntrada().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) &&
                 movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) ||
 
@@ -173,64 +161,45 @@ public class MovimentacaoService {
         {
             tempoNaMulta += ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), movimentacao.getSaida().toLocalTime()).getSeconds());
             c = false;
-            System.out.println(" if-01 \n\n");
         }
         else if (movimentacao.getEntrada().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) ||
                 movimentacao.getEntrada().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
         {
             tempoNaMulta += ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getInicioExpediente()).getSeconds());
-            System.out.println(" if-02 \n\n");
         }
 
         if (tempoNaMulta < 0)
         {
             tempoNaMulta = (-1)*tempoNaMulta;
             tempoNaMulta = umDiaS - tempoNaMulta;
-            System.out.println(" if-03 \n\n");
         }
 
 
-        /*if(movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
-        {
-            tempoNaMulta += ((int) Duration.between(objetoConfig.getFimExpediente(), movimentacao.getSaida().toLocalTime()).getSeconds());
-        }*/
 
-
-
-
-        //se for negativo significa que não tem multa
         if(diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
         {
             tempoNaMulta += (diasEstacionado * tempoForaDeExpediente);
-            System.out.println(" if-04 \n\n");
         }
         else if (diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()))
         {
             tempoNaMulta += (diasEstacionado * tempoForaDeExpediente);
-            System.out.println(" if-05 \n\n");
         }
         else if (diasEstacionado > 0 &&
                 movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) &&
                 movimentacao.getSaida().toLocalTime().isAfter(movimentacao.getEntrada().toLocalTime()))
         {
-            //IF para quando passou por exemplos 6 dias entre o dia 1 e 7
-            //mas não pegou a multa inteira do ultimo dia dos 6
             tempoNaMulta += ((diasEstacionado-1) * tempoForaDeExpediente);
-            System.out.println(" if-06 \n\n");
         }
         else if(diasEstacionado > 0 &&
                 movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getInicioExpediente()) &&
                 movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getFimExpediente()))
         {
-            //IF para quando passar dias e ele saiu durante o expediente
             tempoNaMulta += tempoForaDeExpediente * diasEstacionado;
-            System.out.println(" if-07 \n\n");
         }
 
         if(tempoForaDeExpediente - tempoSaidaInicio > 0 && c)
         {
             tempoNaMulta += tempoForaDeExpediente - tempoSaidaInicio;
-            System.out.println(" if-08 \n\n");
         }
 
         System.out.println(" tempo multa "+ tempoNaMulta +"\n\n");
@@ -238,35 +207,22 @@ public class MovimentacaoService {
         if(tempoNaMulta < 0)
         {
             tempoNaMulta = 0;
-            System.out.println(" if-09 \n\n");
         }
-        System.out.println(" tempo multa "+ tempoNaMulta +"\n\n");
 
-        /*
-        if(movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getFimExpediente()) && diasEstacionado < 1)
+        if(tempoNaMulta > 0)
         {
-            tempoForaMulta = ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getFimExpediente()).getSeconds());
-            tempoMulta = tempoEstacionado - tempoForaMulta;
-        }
-        else if(diasEstacionado == 1)
-        {
-            //Verificar se entrou as 17h de um dia e saiu a 10h do dia seguinte E.G.
-            //Verificar se saiu antes ou durante ou depois do tempo de expediente
-        }
-        else if(diasEstacionado > 1)
-        {
-            //Provalvemente fazer (diasEstacionado-1)*tempoExpediente mas analisar melhor
+            tempoNoExpediente = tempoEstacionado - tempoNaMulta;
         }
         else
         {
-            tempoForaMulta = tempoEstacionado;
-        }*/
+            tempoNoExpediente = tempoEstacionado;
+        }
 
 
-        atribuiValores(movimentacao, tempoEstacionado, tempoForaMulta, tempoNaMulta);
+        atribuiValores(movimentacao, tempoEstacionado, tempoNoExpediente, tempoNaMulta);
     }
 
-    private void atribuiValores(Movimentacao movimentacao, int tempoEstacionado, int tempoForaMulta, int tempoNaMulta)
+    private void atribuiValores(Movimentacao movimentacao, int tempoEstacionado, int tempoNoExpediente, int tempoNaMulta)
     {
         Configuracao objetoConfig = configuracaoRepository.getConfig();
 
@@ -278,7 +234,7 @@ public class MovimentacaoService {
 
 
         BigDecimal valorMulta = new BigDecimal( (tempoNaMulta / 60) );
-        BigDecimal valorTotal = new BigDecimal( (tempoForaMulta / 60) );
+        BigDecimal valorTotal = new BigDecimal( (tempoEstacionado / 60) );
 
         BigDecimal op = new BigDecimal(60);
 
@@ -290,7 +246,7 @@ public class MovimentacaoService {
         movimentacao.setValorHoraMulta( objetoConfig.getValorMinutoMulta().multiply(op) );
         movimentacao.setValorHora( objetoConfig.getValorHora() );
 
-        atribuiCondutor(movimentacao, tempoForaMulta);
+        atribuiCondutor(movimentacao, tempoNaMulta);
 
     }
 
