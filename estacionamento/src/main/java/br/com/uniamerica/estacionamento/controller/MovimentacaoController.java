@@ -94,6 +94,25 @@ public class MovimentacaoController {
         }
     }
 
+    @PutMapping("/fecha")
+    public ResponseEntity<?> finalizar(
+            @RequestParam("id") final Long id,
+            @RequestBody final Movimentacao movimentacao) {
+        try {
+            this.movimentacaoService.fecha(movimentacao, id);
+
+            return ResponseEntity.ok("Registro atualizado com sucesso");
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            return ResponseEntity.internalServerError().body("Erro: " + e.getCause().getCause().getMessage());
+        }
+        catch (RuntimeException e)
+        {
+            return ResponseEntity.internalServerError().body("Erro: " + e.getMessage());
+        }
+    }
+
 
     @DeleteMapping
     public ResponseEntity<?> delete(@RequestParam("id") final Long id) {
