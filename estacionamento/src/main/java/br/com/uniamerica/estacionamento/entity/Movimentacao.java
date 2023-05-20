@@ -47,8 +47,13 @@ public class Movimentacao extends AbstractEntity{
     private int tempoDesconto;
 
     @Getter @Setter
+    @Column(name = "tempo_da_multa_hora")
+    private int tempoMultaHora;
+
+    @Getter @Setter
     @Column(name = "tempo_da_multa_minuto")
-    private int tempoMulta;
+    private int tempoMultaMinuto;
+
 
     @Getter @Setter
     @Column(name = "valor_do_desconto")
@@ -67,7 +72,7 @@ public class Movimentacao extends AbstractEntity{
     private BigDecimal valorHora;
 
     @Getter @Setter
-    @Column(name = "valor_do_minuto_da_multa")
-    private BigDecimal valorMinutoMulta;
+    @Column(name = "valor_da_hora_da_multa")
+    private BigDecimal valorHoraMulta;
 
 }
