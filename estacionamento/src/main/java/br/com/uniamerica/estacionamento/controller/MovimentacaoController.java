@@ -101,7 +101,19 @@ public class MovimentacaoController {
         try {
             this.movimentacaoService.fecha(movimentacao, id);
 
-            return ResponseEntity.ok("Registro atualizado com sucesso");
+            return ResponseEntity.ok(
+                    "Entrada: " + movimentacao.getEntrada() + "\n" +
+                            "Saida: " + movimentacao.getSaida() + "\n" +
+                            "Condutor: " + movimentacao.getCondutor().getNome() + "\n" +
+                            "Veiculo: " + movimentacao.getVeiculo().getPlaca() + "\n" +
+                            "Quantidade de horas: " + movimentacao.getTempoHora() + " Minutos: " + movimentacao.getTempoMinuto() + "\n" +
+                            "Quantidade de horas para o desconto: " + "\n" +
+                            "Valor da multa: " + movimentacao.getValorMulta() + "\n" +
+
+                            "Valor total a pagar: " + movimentacao.getValorTotal() + "\n" +
+                            "Valor do desconto: " + movimentacao.getValorDesconto()
+
+            );
         }
         catch (DataIntegrityViolationException e)
         {
