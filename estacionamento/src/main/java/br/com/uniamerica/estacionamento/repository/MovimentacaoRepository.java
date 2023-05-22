@@ -18,6 +18,7 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, Long
     @Query("select exists (select m from Movimentacao m where m.id = :id)")
     boolean doesExist(@Param("id") final Long id);
 
-
+    @Query("select m from Movimentacao m where m.id = :id")
+    Movimentacao getMovimentacaoById(@Param("id") final Long id);
 
 }
