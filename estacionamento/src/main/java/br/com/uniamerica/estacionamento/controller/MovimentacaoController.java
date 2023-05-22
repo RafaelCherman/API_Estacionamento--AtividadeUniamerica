@@ -61,9 +61,9 @@ public class MovimentacaoController {
     public ResponseEntity<?> cadastrar(@RequestBody final Movimentacao movimentacao) {
         try {
 
-            this.movimentacaoService.cadastrar(movimentacao);
+            String resposta = this.movimentacaoService.cadastrar(movimentacao);
 
-            return ResponseEntity.ok("Registro cadastrado com sucesso");
+            return ResponseEntity.ok(resposta);
         }
         catch (DataIntegrityViolationException e){
             return ResponseEntity.internalServerError().body("Erro: " + e.getCause().getCause().getMessage());
@@ -80,9 +80,9 @@ public class MovimentacaoController {
             @RequestParam("id") final Long id,
             @RequestBody final Movimentacao movimentacao) {
         try {
-            this.movimentacaoService.editar(movimentacao, id);
+            String resposta = this.movimentacaoService.editar(movimentacao, id);
 
-            return ResponseEntity.ok("Registro atualizado com sucesso");
+            return ResponseEntity.ok(resposta);
         }
         catch (DataIntegrityViolationException e)
         {
@@ -99,21 +99,10 @@ public class MovimentacaoController {
             @RequestParam("id") final Long id,
             @RequestBody final Movimentacao movimentacao) {
         try {
-            this.movimentacaoService.fecha(movimentacao, id);
+            String resposta;
+            resposta = this.movimentacaoService.fecha(movimentacao, id);
 
-            return ResponseEntity.ok(
-                    "Entrada: " + movimentacao.getEntrada() + "\n" +
-                            "Saida: " + movimentacao.getSaida() + "\n" +
-                            "Condutor: " + movimentacao.getCondutor().getNome() + "\n" +
-                            "Veiculo: " + movimentacao.getVeiculo().getPlaca() + "\n" +
-                            "Quantidade de horas: " + movimentacao.getTempoHora() + " Minutos: " + movimentacao.getTempoMinuto() + "\n" +
-                            "Quantidade de horas para o desconto: " + "\n" +
-                            "Valor da multa: " + movimentacao.getValorMulta() + "\n" +
-
-                            "Valor total a pagar: " + movimentacao.getValorTotal() + "\n" +
-                            "Valor do desconto: " + movimentacao.getValorDesconto()
-
-            );
+            return ResponseEntity.ok(resposta);
         }
         catch (DataIntegrityViolationException e)
         {
