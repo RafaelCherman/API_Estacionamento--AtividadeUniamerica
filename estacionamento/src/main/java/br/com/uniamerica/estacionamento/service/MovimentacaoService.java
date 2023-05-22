@@ -22,6 +22,10 @@ import java.util.List;
 @Service
 public class MovimentacaoService {
 
+    //Tratar erros 400
+    //Stress test
+    //Arrumar a nota final
+
     @Autowired
     private MovimentacaoRepository movimentacaoRepository;
 
@@ -59,8 +63,9 @@ public class MovimentacaoService {
     }
 
     @Transactional(rollbackOn = Exception.class)
-    public void cadastrar(final Movimentacao movimentacao){
+    public String cadastrar(final Movimentacao movimentacao){
 
+        String resposta;
 
         Assert.notNull(movimentacao.getCondutor(), "Condutor não pode ser nulo.");
         Assert.isTrue(condutorRepository.doesExist(movimentacao.getCondutor().getId()), "Condutor não existe");
@@ -72,15 +77,24 @@ public class MovimentacaoService {
         if(movimentacao.getSaida() != null)
         {
             calculaTempoEstacionado(movimentacao);
+            resposta = criaResposta(movimentacao);
+        }
+        else
+        {
+            resposta = "Registro cadastrado com sucesso";
         }
 
         this.movimentacaoRepository.save(movimentacao);
 
+        return resposta;
+
     }
 
     @Transactional(rollbackOn = Exception.class)
-    public void editar(final Movimentacao movimentacao, final Long urlId)
+    public String editar(final Movimentacao movimentacao, final Long urlId)
     {
+        String resposta;
+
         Assert.isTrue(movimentacaoRepository.doesExist(urlId), "Movimentacao não existe.");
         Assert.isTrue(movimentacao.getId().equals(urlId), "Não foi possivel identificar o registro informado.");
         Assert.notNull(movimentacao.getCondutor(), "Condutor não pode ser nulo.");
@@ -89,17 +103,30 @@ public class MovimentacaoService {
         Assert.isTrue(veiculoRepository.doesExist(movimentacao.getVeiculo().getId()), "Veiculo não existe");
         Assert.notNull(movimentacao.getEntrada(), "Entrada não pode ser nula");
 
-        //Comparar os valores antigos da entrada e saida pra se for diferente atualizar oque precisa
-        //Exs alterar as horas e valores da movimentacao por completo, mas altera o condutor conforme
-        //Uma ideia eh zerar os valores da movimentacao e chamar uma função pra alterar o condutor
-        //e depois chamar a função padrao
+        Movimentacao oldMovimentacao = this.movimentacaoRepository.getMovimentacaoById(urlId);
+
+        if(oldMovimentacao.getSaida() != movimentacao.getSaida() ||
+            oldMovimentacao.getEntrada() != movimentacao.getEntrada())
+        {
+            movimentacao.setCondutor( editaMovimentoCondutor(oldMovimentacao.getCondutor(), oldMovimentacao) );
+            calculaTempoEstacionado(movimentacao);
+            resposta = criaResposta(movimentacao);
+        }
+        else
+        {
+            resposta = "Registro atualizado com sucesso";
+        }
 
         this.movimentacaoRepository.save(movimentacao);
+
+        return resposta;
     }
 
     @Transactional(rollbackOn = Exception.class)
-    public void fecha(final Movimentacao movimentacao, final Long urlId)
+    public String fecha(final Movimentacao movimentacao, final Long urlId)
     {
+        String resposta;
+
         Assert.isTrue(movimentacaoRepository.doesExist(urlId), "Movimentacao não existe.");
         Assert.isTrue(movimentacao.getId().equals(urlId), "Não foi possivel identificar o registro informado.");
         Assert.notNull(movimentacao.getCondutor(), "Condutor não pode ser nulo.");
@@ -108,8 +135,15 @@ public class MovimentacaoService {
         Assert.isTrue(veiculoRepository.doesExist(movimentacao.getVeiculo().getId()), "Veiculo não existe");
         Assert.notNull(movimentacao.getEntrada(), "Entrada não pode ser nula");
         Assert.notNull(movimentacao.getSaida(), "Saida não pode ser nula");
+        Assert.isNull(movimentacaoRepository.getMovimentacaoById(urlId).getSaida(), "Movimentação já foi fechada");
 
         calculaTempoEstacionado(movimentacao);
+
+        this.movimentacaoRepository.save(movimentacao);
+
+        resposta = criaResposta(movimentacao);
+
+        return resposta;
 
     }
 
@@ -144,17 +178,17 @@ public class MovimentacaoService {
 
 
         int tempoSaidaInicio = (((int) Duration.between(movimentacao.getSaida().toLocalTime(), objetoConfig.getInicioExpediente()).getSeconds()));
-        int tempoEntradaFim = ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getFimExpediente()).getSeconds());
+        //int tempoEntradaFim = ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getFimExpediente()).getSeconds());
         if(tempoSaidaInicio < 0)
         {
             tempoSaidaInicio = (-1)*tempoSaidaInicio;
             tempoSaidaInicio = umDiaS - tempoSaidaInicio;
         }
-        if(tempoEntradaFim < 0)
+        /*if(tempoEntradaFim < 0)
         {
             tempoEntradaFim = (-1)*tempoEntradaFim;
             tempoEntradaFim = umDiaS - tempoEntradaFim;
-        }
+        }*/
 
 
         tempoEstacionado = ((int) Duration.between(movimentacao.getEntrada(), movimentacao.getSaida()).getSeconds());
@@ -241,6 +275,9 @@ public class MovimentacaoService {
         int descontoHora = objetoCondutor.getTempoDescontoHora();
         int descontoMinuto = objetoCondutor.getTempoDescontoMinuto();
 
+        BigDecimal op = new BigDecimal(60);
+        BigDecimal valorDoDesconto = new BigDecimal(0);
+
         int tempoPagar = 0;
 
 
@@ -251,6 +288,7 @@ public class MovimentacaoService {
         movimentacao.setTempoMinuto( (tempoNaMulta / 60) % 60);
 
         tempoPagar = tempoEstacionado;
+
 
         if(descontoHora > 0 || descontoMinuto > 0)
         {
@@ -283,29 +321,47 @@ public class MovimentacaoService {
             {
                 descontoHora = 0;
             }
+
+            valorDoDesconto = BigDecimal.valueOf( ((desconto * 60) * 60) - ((objetoConfig.getTempoDeDesconto() * 60) * 60) );
+
         }
+        System.out.println("\n\nDesconto hora: " + descontoHora);
+        System.out.println("\n\nDesconto minuto: " + descontoMinuto);
 
         objetoCondutor.setTempoDescontoHora(descontoHora);
         objetoCondutor.setTempoDescontoMinuto(descontoMinuto);
 
+        if(tempoPagar < 0)
+        {
+            tempoPagar = 0;
+        }
+
+
         BigDecimal valorMulta = new BigDecimal( (tempoNaMulta / 60) );
         BigDecimal valorTotal = new BigDecimal( (tempoPagar / 60) );
 
-        BigDecimal op = new BigDecimal(60);
+
 
         movimentacao.setValorMulta( valorMulta.multiply( objetoConfig.getValorMinutoMulta() ) );
         movimentacao.setValorTotal( (valorTotal.multiply( ( objetoConfig.getValorHora()  ) ).divide(op, 2, RoundingMode.HALF_UP) ) );
-
+        if(valorDoDesconto.compareTo(BigDecimal.valueOf(0)) > 0)
+        {
+            movimentacao.setValorDesconto( (valorDoDesconto.multiply( ( objetoConfig.getValorHora()  ) ).divide(op, 2, RoundingMode.HALF_UP) ) );
+        }
+        else
+        {
+            movimentacao.setValorDesconto(new BigDecimal(0));
+        }
 
 
         movimentacao.setValorHoraMulta( objetoConfig.getValorMinutoMulta().multiply(op) );
         movimentacao.setValorHora( objetoConfig.getValorHora() );
 
-        atribuiCondutor(movimentacao, objetoCondutor, tempoNoExpediente);
+        atribuiCondutor(movimentacao, objetoCondutor, tempoPagar);
 
     }
 
-    private void atribuiCondutor(Movimentacao movimentacao, Condutor objetoCondutor, int tempoNoExpediente)
+    private void atribuiCondutor(Movimentacao movimentacao, Condutor objetoCondutor, int tempoPagar)
     {
         Configuracao objetoConfig = configuracaoRepository.getConfig();
 
@@ -313,7 +369,7 @@ public class MovimentacaoService {
         int minutoAtual = objetoCondutor.getTempoPagoMinuto();
         int calculaDesconto = horaAtual / objetoConfig.getTempoParaDesconto();
 
-        minutoAtual += ((tempoNoExpediente / 60) % 60 );
+        minutoAtual += ((tempoPagar / 60) % 60 );
 
         if(minutoAtual >= 60)
         {
@@ -321,7 +377,7 @@ public class MovimentacaoService {
             minutoAtual = minutoAtual - 60;
         }
 
-        horaAtual += ((tempoNoExpediente / 60) / 60 );
+        horaAtual += ((tempoPagar / 60) / 60 );
 
         if(objetoConfig.isGerarDesconto() &&
                 objetoCondutor.getTempoDescontoHora() == 0 &&
@@ -338,5 +394,68 @@ public class MovimentacaoService {
 
         this.condutorRepository.save(objetoCondutor);
 
+    }
+
+    private Condutor editaMovimentoCondutor(Condutor condutor, Movimentacao movimentacao)
+    {
+        Configuracao objetoconfig = this.configuracaoRepository.getConfig();
+
+        int calculaDesconto = condutor.getTempoPagoHora()  / objetoconfig.getTempoParaDesconto();
+        int horaAutal;
+
+        BigDecimal valorPago = movimentacao.getValorTotal();
+        BigDecimal valorTotalTempo = movimentacao.getValorHora().multiply( BigDecimal.valueOf( ( ( (movimentacao.getTempoHora() * 60) + movimentacao.getTempoMinuto() ) / 60 ) ) );
+        BigDecimal valorTotalMulta = (movimentacao.getValorHoraMulta().divide(BigDecimal.valueOf(60))).multiply(BigDecimal.valueOf( ( (movimentacao.getTempoMultaHora() * 60) + movimentacao.getTempoMultaMinuto() ) ) );
+        BigDecimal valorTotal = valorTotalTempo.add(valorTotalMulta);
+
+
+        condutor.setTempoPagoHora( condutor.getTempoPagoHora() - (movimentacao.getTempoHora() - movimentacao.getTempoMultaHora()));
+        condutor.setTempoPagoMinuto( condutor.getTempoPagoMinuto() - (movimentacao.getTempoMinuto() - movimentacao.getTempoMultaMinuto()));
+
+        horaAutal = condutor.getTempoPagoHora();
+
+        if(horaAutal < (objetoconfig.getTempoParaDesconto() * calculaDesconto))
+        {
+            condutor.setTempoDescontoHora( condutor.getTempoDescontoHora() - objetoconfig.getTempoDeDesconto() );
+        }
+        else if(condutor.getTempoDescontoHora() > 0)
+        {
+            condutor.setTempoDescontoHora(objetoconfig.getTempoDeDesconto() - condutor.getTempoDescontoHora() );
+        }
+
+        if(condutor.getTempoDescontoMinuto() > 0)
+        {
+            condutor.setTempoDescontoMinuto(60 - condutor.getTempoDescontoMinuto());
+        }
+
+        if( !(valorPago.equals(valorTotal)) )
+        {
+            condutor.setTempoDescontoHora(objetoconfig.getTempoDeDesconto());
+        }
+
+        return condutor;
+    }
+
+    private String criaResposta(Movimentacao movimentacao)
+    {
+        Configuracao objetoconfig = this.configuracaoRepository.getConfig();
+        String resposta;
+
+        resposta = "Entrada: " + movimentacao.getEntrada() + "\n" +
+                "Saida: " + movimentacao.getSaida() + "\n" +
+                "Condutor: " + movimentacao.getCondutor().getNome() + "\n" +
+                "Veiculo: " + movimentacao.getVeiculo().getPlaca() + "\n" +
+                "Quantidade de horas: " + movimentacao.getTempoHora() + " Minutos: " + movimentacao.getTempoMinuto() + "\n" +
+                "Valor da multa: " + movimentacao.getValorMulta() + "\n" +
+                "Valor total a pagar: " + movimentacao.getValorTotal() + "\n";
+
+        if(objetoconfig.isGerarDesconto())
+        {
+            resposta += "Quantidade de horas para o desconto: " + "\n" +
+                    "Valor do desconto: " + movimentacao.getValorDesconto() + "\n";
+        }
+
+
+        return resposta;
     }
 }
