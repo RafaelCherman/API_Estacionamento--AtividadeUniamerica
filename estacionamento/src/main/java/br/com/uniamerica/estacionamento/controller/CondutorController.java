@@ -14,7 +14,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping(value = "api/condutor")
-public class CondutorController {
+public class CondutorController  {
 
     @Autowired
     private CondutorRepository condutorRepository;

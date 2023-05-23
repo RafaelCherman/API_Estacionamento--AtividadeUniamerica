@@ -451,7 +451,7 @@ public class MovimentacaoService {
 
         if(objetoconfig.isGerarDesconto())
         {
-            resposta += "Quantidade de horas para o desconto: " + "\n" +
+            resposta += "Quantidade de horas para o desconto: " + movimentacao.getTempoHora() + "\n" +
                     "Valor do desconto: " + movimentacao.getValorDesconto() + "\n";
         }
 
