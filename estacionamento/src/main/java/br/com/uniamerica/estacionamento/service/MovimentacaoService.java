@@ -22,10 +22,6 @@ import java.util.List;
 @Service
 public class MovimentacaoService {
 
-    //Tratar erros 400
-    //Stress test
-    //Arrumar a nota final
-
     @Autowired
     private MovimentacaoRepository movimentacaoRepository;
 
@@ -272,6 +268,7 @@ public class MovimentacaoService {
         Condutor objetoCondutor = condutorRepository.getMovimentacaoCondutor(movimentacao.getCondutor().getId());
 
         int desconto = 0;
+        int descontoAtual = 0;
         int descontoHora = objetoCondutor.getTempoDescontoHora();
         int descontoMinuto = objetoCondutor.getTempoDescontoMinuto();
 
@@ -282,52 +279,42 @@ public class MovimentacaoService {
 
 
         movimentacao.setTempoHora( ( (tempoEstacionado / 60) / 60) );
-        movimentacao.setTempoMinuto( (tempoEstacionado / 60) % 60);
+        movimentacao.setTempoMinuto( ( (tempoEstacionado / 60) % 60) );
 
         movimentacao.setTempoMultaHora( ( (tempoNaMulta / 60) / 60) );
-        movimentacao.setTempoMinuto( (tempoNaMulta / 60) % 60);
+        movimentacao.setTempoMultaMinuto( ( (tempoNaMulta / 60) % 60) );
 
         tempoPagar = tempoEstacionado;
 
 
         if(descontoHora > 0 || descontoMinuto > 0)
         {
-            tempoPagar = tempoEstacionado - ((descontoHora * 60) * 60);
+
+            desconto = (((descontoHora * 60) * 60) + (descontoMinuto * 60));
+            tempoPagar = tempoEstacionado - desconto;
+            descontoAtual = desconto - tempoEstacionado;
             if(tempoPagar < 0)
             {
-                desconto = ((descontoHora * 60) * 60) - tempoEstacionado;
-
-                descontoHora = ((desconto / 60) / 60);
-                descontoMinuto = ((desconto / 60) % 60);
-
-            }
-            else if(descontoMinuto > 0)
-            {
-                tempoPagar = (tempoEstacionado - ((descontoHora * 60) * 60)) - (descontoMinuto * 60);
-                if(tempoPagar < 0)
-                {
-                    desconto = (descontoMinuto * 60) - tempoEstacionado;
-
-                    descontoHora = ((desconto / 60) / 60);
-                    descontoMinuto = ((desconto / 60) % 60);
-                }
-                else
-                {
-                    descontoHora = 0;
-                    descontoMinuto = 0;
-                }
+                descontoHora = ((descontoAtual / 60) / 60);
+                descontoMinuto = ((descontoAtual / 60) % 60);
             }
             else
             {
                 descontoHora = 0;
+                descontoMinuto = 0;
             }
 
-            valorDoDesconto = BigDecimal.valueOf( ((desconto * 60) * 60) - ((objetoConfig.getTempoDeDesconto() * 60) * 60) );
+            if(descontoAtual < 0)
+            {
+                valorDoDesconto = BigDecimal.valueOf( (desconto) / 60 );
+            }
+            else
+            {
+                valorDoDesconto = BigDecimal.valueOf( (desconto - descontoAtual) / 60 );
+            }
 
         }
-        System.out.println("\n\nDesconto hora: " + descontoHora);
-        System.out.println("\n\nDesconto minuto: " + descontoMinuto);
-
+        
         objetoCondutor.setTempoDescontoHora(descontoHora);
         objetoCondutor.setTempoDescontoMinuto(descontoMinuto);
 
@@ -357,11 +344,11 @@ public class MovimentacaoService {
         movimentacao.setValorHoraMulta( objetoConfig.getValorMinutoMulta().multiply(op) );
         movimentacao.setValorHora( objetoConfig.getValorHora() );
 
-        atribuiCondutor(movimentacao, objetoCondutor, tempoPagar);
+        atribuiCondutor(objetoCondutor, tempoPagar);
 
     }
 
-    private void atribuiCondutor(Movimentacao movimentacao, Condutor objetoCondutor, int tempoPagar)
+    private void atribuiCondutor(Condutor objetoCondutor, int tempoPagar)
     {
         Configuracao objetoConfig = configuracaoRepository.getConfig();
 
@@ -440,6 +427,13 @@ public class MovimentacaoService {
     {
         Configuracao objetoconfig = this.configuracaoRepository.getConfig();
         String resposta;
+        BigDecimal minutosDesconto = (movimentacao.getValorDesconto().divide(objetoconfig.getValorHora())).multiply(new BigDecimal(60)) ;
+        int horaPraDesconto = (((movimentacao.getTempoHora() * 60) + movimentacao.getTempoMinuto()) - minutosDesconto.intValue()) / 60 ;
+
+        if(horaPraDesconto < 0)
+        {
+            horaPraDesconto = 0;
+        }
 
         resposta = "Entrada: " + movimentacao.getEntrada() + "\n" +
                 "Saida: " + movimentacao.getSaida() + "\n" +
@@ -451,7 +445,7 @@ public class MovimentacaoService {
 
         if(objetoconfig.isGerarDesconto())
         {
-            resposta += "Quantidade de horas para o desconto: " + movimentacao.getTempoHora() + "\n" +
+            resposta += "Quantidade de horas para o desconto: " + horaPraDesconto + "\n" +
                     "Valor do desconto: " + movimentacao.getValorDesconto() + "\n";
         }
 
