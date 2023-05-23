@@ -314,7 +314,7 @@ public class MovimentacaoService {
             }
 
         }
-        
+
         objetoCondutor.setTempoDescontoHora(descontoHora);
         objetoCondutor.setTempoDescontoMinuto(descontoMinuto);
 
@@ -427,7 +427,7 @@ public class MovimentacaoService {
     {
         Configuracao objetoconfig = this.configuracaoRepository.getConfig();
         String resposta;
-        BigDecimal minutosDesconto = (movimentacao.getValorDesconto().divide(objetoconfig.getValorHora())).multiply(new BigDecimal(60)) ;
+        BigDecimal minutosDesconto = (movimentacao.getValorDesconto().divide(objetoconfig.getValorHora(), 2, RoundingMode.HALF_UP)).multiply(new BigDecimal(60)) ;
         int horaPraDesconto = (((movimentacao.getTempoHora() * 60) + movimentacao.getTempoMinuto()) - minutosDesconto.intValue()) / 60 ;
 
         if(horaPraDesconto < 0)
