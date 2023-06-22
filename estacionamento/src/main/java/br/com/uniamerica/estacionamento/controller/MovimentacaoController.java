@@ -1,6 +1,8 @@
 package br.com.uniamerica.estacionamento.controller;
 
+import br.com.uniamerica.estacionamento.entity.Condutor;
 import br.com.uniamerica.estacionamento.entity.Movimentacao;
+import br.com.uniamerica.estacionamento.entity.Veiculo;
 import br.com.uniamerica.estacionamento.repository.MovimentacaoRepository;
 import br.com.uniamerica.estacionamento.service.MovimentacaoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +23,31 @@ public class MovimentacaoController {
     @Autowired
     private MovimentacaoService movimentacaoService;
 
-    @GetMapping
-    public ResponseEntity<?> findByIdRequest(@RequestParam("id") final Long id) {
+
+    @GetMapping("/cpf/{cpf}")
+    public ResponseEntity<?> findCondutorByCpf(@PathVariable("cpf") final String cpf)
+    {
+        final Condutor condutor = this.movimentacaoRepository.findCondutorByCpf(cpf);
+
+        return condutor == null
+                ? ResponseEntity.badRequest().body("Nenhum condutor encontrado")
+                : ResponseEntity.ok(condutor);
+
+    }
+
+    @GetMapping("/placa/{placa}")
+    public ResponseEntity<?> findVeiculoByPlaca(@PathVariable("placa") final String placa)
+    {
+        final Veiculo veiculo= this.movimentacaoRepository.findVeiculoByPlaca(placa);
+
+        return veiculo == null
+                ? ResponseEntity.badRequest().body("Nenhum condutor encontrado")
+                : ResponseEntity.ok(veiculo);
+
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id) {
 
         final Movimentacao movimentacao = this.movimentacaoRepository.findById(id).orElse(null);
 

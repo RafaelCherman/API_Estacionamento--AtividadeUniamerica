@@ -1,5 +1,6 @@
 package br.com.uniamerica.estacionamento.repository;
 
+import br.com.uniamerica.estacionamento.entity.Marca;
 import br.com.uniamerica.estacionamento.entity.Modelo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +27,9 @@ public interface ModeloRepository extends JpaRepository<Modelo, Long> {
 
     @Query("select exists (select v from Veiculo v where v.modelo.id = :id)")
     boolean isInVeiculo(@Param("id") final Long id);
+
+    @Query("select m from Marca m where m.nome = :nome")
+    Marca getMarcaByNome(@Param("nome") final String marca);
 
 
 

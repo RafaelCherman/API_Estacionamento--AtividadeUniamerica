@@ -22,8 +22,8 @@ public class CondutorController  {
     @Autowired
     private CondutorService condutorService;
 
-    @GetMapping
-    public ResponseEntity<?> findByIdRequest(@RequestParam("id") final Long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id) {
 
         final Condutor condutor = this.condutorRepository.findById(id).orElse(null);
 
@@ -76,9 +76,9 @@ public class CondutorController  {
     }
 
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> editar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Condutor condutor) {
         try {
             this.condutorService.editar(condutor, id);
@@ -96,8 +96,8 @@ public class CondutorController  {
     }
 
 
-    @DeleteMapping
-    public ResponseEntity<?> delete(@RequestParam("id") final Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") final Long id) {
 
         try {
             if (this.condutorService.deleta(id))

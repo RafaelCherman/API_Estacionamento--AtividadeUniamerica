@@ -17,8 +17,8 @@ public class ConfiguracaoController {
     @Autowired
     private ConfiguracaoRepository configuracaoRepository;
 
-    @GetMapping
-    public ResponseEntity<?> findByIdRequest(@RequestParam("id") final Long id)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id)
     {
         final Configuracao configuracao = this.configuracaoRepository.findById(id).orElse(null);
 
@@ -39,9 +39,9 @@ public class ConfiguracaoController {
         }
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> editar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Configuracao configuracao){
 
         try {

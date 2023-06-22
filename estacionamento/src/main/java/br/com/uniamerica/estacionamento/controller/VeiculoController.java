@@ -21,8 +21,8 @@ public class VeiculoController {
     @Autowired
     private VeiculoService veiculoService;
 
-    @GetMapping
-    public ResponseEntity<?> findByIdRequest(@RequestParam("id") final Long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id) {
 
         final Veiculo veiculo = this.veiculoRepository.findById(id).orElse(null);
 
@@ -75,9 +75,9 @@ public class VeiculoController {
     }
 
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> editar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Veiculo veiculo) {
         try {
             this.veiculoService.editar(veiculo, id);
@@ -95,8 +95,8 @@ public class VeiculoController {
     }
 
 
-    @DeleteMapping
-    public ResponseEntity<?> delete(@RequestParam("id") final Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") final Long id) {
 
         try {
             if (this.veiculoService.deleta(id))

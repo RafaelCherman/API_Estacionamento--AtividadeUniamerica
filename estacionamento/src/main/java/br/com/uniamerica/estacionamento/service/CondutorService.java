@@ -64,7 +64,11 @@ public class CondutorService {
         Assert.isTrue(condutor.getCpf().matches("[0-9]{3}[.][0-9]{3}[.][0-9]{3}[-][0-9]{2}"), "CPF invalido.");
         if (condutorRepository.cpfAlreadyExists(condutor.getCpf()));
         {
-            if(!(condutorRepository.isTheSame(condutor.getCpf()).equals(urlId)))
+            if( condutorRepository.isTheSame(condutor.getCpf()) == null )
+            {
+
+            }
+            else if(!(condutorRepository.isTheSame(condutor.getCpf()).equals(urlId)))
             {
                 throw new RuntimeException("CPF ja existe.");
             }

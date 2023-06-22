@@ -22,8 +22,8 @@ public class MarcaController {
     @Autowired
     private MarcaService marcaService;
 
-    @GetMapping
-    public ResponseEntity<?> findByIdRequest(@RequestParam("id") final Long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id) {
 
         final Marca marca = this.marcaRepository.findById(id).orElse(null);
 
@@ -76,9 +76,9 @@ public class MarcaController {
     }
 
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> editar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Marca marca) {
         try {
             this.marcaService.editar(marca, id);
@@ -96,8 +96,8 @@ public class MarcaController {
     }
 
 
-    @DeleteMapping
-    public ResponseEntity<?> delete(@RequestParam("id") final Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") final Long id) {
 
         try {
             if (this.marcaService.deleta(id))
