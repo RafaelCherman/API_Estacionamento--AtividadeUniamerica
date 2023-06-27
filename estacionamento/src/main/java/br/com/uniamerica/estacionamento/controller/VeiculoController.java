@@ -1,5 +1,6 @@
 package br.com.uniamerica.estacionamento.controller;
 
+import br.com.uniamerica.estacionamento.entity.Modelo;
 import br.com.uniamerica.estacionamento.entity.Veiculo;
 import br.com.uniamerica.estacionamento.repository.VeiculoRepository;
 import br.com.uniamerica.estacionamento.service.VeiculoService;
@@ -20,6 +21,16 @@ public class VeiculoController {
 
     @Autowired
     private VeiculoService veiculoService;
+
+    @GetMapping("/modelo/{nome}")
+    public ResponseEntity<?> findModeloByNome(@PathVariable("nome") final String nome) {
+
+        final Modelo modelo = this.veiculoRepository.findModeloByNome(nome);
+
+        return modelo == null
+                ? ResponseEntity.badRequest().body("Modelo não encontrado")
+                : ResponseEntity.ok(modelo);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id) {

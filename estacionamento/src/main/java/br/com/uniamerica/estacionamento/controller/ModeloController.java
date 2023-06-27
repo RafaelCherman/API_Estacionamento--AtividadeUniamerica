@@ -1,5 +1,6 @@
 package br.com.uniamerica.estacionamento.controller;
 
+import br.com.uniamerica.estacionamento.entity.Marca;
 import br.com.uniamerica.estacionamento.entity.Modelo;
 import br.com.uniamerica.estacionamento.repository.ModeloRepository;
 
@@ -56,6 +57,16 @@ public class ModeloController {
      * 8080/api/modelo?id=1
      *
      */
+
+    @GetMapping("/marca/{nome}")
+    public ResponseEntity<?> findMarcaByNome(@PathVariable("nome") final String nome){
+
+        final Marca marca = this.modeloRepository.findMarcaByNome(nome);
+
+        return marca == null
+                ? ResponseEntity.badRequest().body("Marca não encontrada")
+                : ResponseEntity.ok(marca);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findByIdRequest(@PathVariable("id") final Long id){

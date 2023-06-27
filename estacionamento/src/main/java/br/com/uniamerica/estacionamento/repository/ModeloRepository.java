@@ -29,7 +29,7 @@ public interface ModeloRepository extends JpaRepository<Modelo, Long> {
     boolean isInVeiculo(@Param("id") final Long id);
 
     @Query("select m from Marca m where m.nome = :nome")
-    Marca getMarcaByNome(@Param("nome") final String marca);
+    Marca findMarcaByNome(@Param("nome") final String nome);
 
 
 

@@ -27,6 +27,16 @@ public class ConfiguracaoController {
                 : ResponseEntity.ok(configuracao);
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> findByIdRequest()
+    {
+        final Configuracao configuracao = this.configuracaoRepository.getConfig();
+
+        return  configuracao == null
+                ? ResponseEntity.badRequest().body("Nenhum registro encontrado")
+                : ResponseEntity.ok(configuracao);
+    }
+
     @PostMapping
     public ResponseEntity<?> cadastrar(@RequestBody final Configuracao configuracao)
     {

@@ -100,9 +100,9 @@ public class MovimentacaoController {
     }
 
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<?> editar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Movimentacao movimentacao) {
         try {
             String resposta = this.movimentacaoService.editar(movimentacao, id);
@@ -119,9 +119,9 @@ public class MovimentacaoController {
         }
     }
 
-    @PutMapping("/fecha")
+    @PutMapping("/fecha/{id}")
     public ResponseEntity<?> finalizar(
-            @RequestParam("id") final Long id,
+            @PathVariable("id") final Long id,
             @RequestBody final Movimentacao movimentacao) {
         try {
             String resposta;
@@ -140,8 +140,8 @@ public class MovimentacaoController {
     }
 
 
-    @DeleteMapping
-    public ResponseEntity<?> delete(@RequestParam("id") final Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") final Long id) {
 
         try {
             this.movimentacaoService.deleta(id);

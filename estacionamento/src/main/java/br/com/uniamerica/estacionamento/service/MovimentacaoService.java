@@ -101,17 +101,9 @@ public class MovimentacaoService {
 
         Movimentacao oldMovimentacao = this.movimentacaoRepository.getMovimentacaoById(urlId);
 
-        if(oldMovimentacao.getSaida() != movimentacao.getSaida() ||
-            oldMovimentacao.getEntrada() != movimentacao.getEntrada())
-        {
-            movimentacao.setCondutor( editaMovimentoCondutor(oldMovimentacao.getCondutor(), oldMovimentacao) );
-            calculaTempoEstacionado(movimentacao);
-            resposta = criaResposta(movimentacao);
-        }
-        else
-        {
-            resposta = "Registro atualizado com sucesso";
-        }
+
+        resposta = "Registro atualizado com sucesso";
+
 
         this.movimentacaoRepository.save(movimentacao);
 
@@ -164,8 +156,8 @@ public class MovimentacaoService {
         int tempoNaMulta = 0;
         boolean c = true;
 
-        LocalTime entrada = objetoConfig.getInicioExpediente();
-        LocalTime saida = objetoConfig.getFimExpediente();
+        LocalTime entrada = objetoConfig.getInicioExpediente().toLocalTime();
+        LocalTime saida = objetoConfig.getFimExpediente().toLocalTime();
 
         int tempoDeExpediente = ((int) Duration.between(entrada, saida).getSeconds());
         int tempoForaDeExpediente = umDiaS - tempoDeExpediente;
@@ -173,40 +165,34 @@ public class MovimentacaoService {
 
 
 
-        int tempoSaidaInicio = (((int) Duration.between(movimentacao.getSaida().toLocalTime(), objetoConfig.getInicioExpediente()).getSeconds()));
-        //int tempoEntradaFim = ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getFimExpediente()).getSeconds());
+        int tempoSaidaInicio = (((int) Duration.between(movimentacao.getSaida().toLocalTime(), entrada).getSeconds()));
         if(tempoSaidaInicio < 0)
         {
             tempoSaidaInicio = (-1)*tempoSaidaInicio;
             tempoSaidaInicio = umDiaS - tempoSaidaInicio;
         }
-        /*if(tempoEntradaFim < 0)
-        {
-            tempoEntradaFim = (-1)*tempoEntradaFim;
-            tempoEntradaFim = umDiaS - tempoEntradaFim;
-        }*/
 
 
         tempoEstacionado = ((int) Duration.between(movimentacao.getEntrada(), movimentacao.getSaida()).getSeconds());
 
 
         //IFs para movimentações improvaveis, porem não está 100%
-        if(movimentacao.getEntrada().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) &&
-                movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) ||
+        if(movimentacao.getEntrada().toLocalTime().isBefore(entrada) &&
+                movimentacao.getSaida().toLocalTime().isBefore(entrada) ||
 
-                movimentacao.getEntrada().toLocalTime().isAfter(objetoConfig.getFimExpediente()) &&
-                        movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) ||
+                movimentacao.getEntrada().toLocalTime().isAfter(saida) &&
+                        movimentacao.getSaida().toLocalTime().isBefore(entrada) ||
 
-                movimentacao.getEntrada().toLocalTime().isAfter(objetoConfig.getFimExpediente()) &&
-                        movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
+                movimentacao.getEntrada().toLocalTime().isAfter(saida) &&
+                        movimentacao.getSaida().toLocalTime().isAfter(entrada))
         {
             tempoNaMulta += ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), movimentacao.getSaida().toLocalTime()).getSeconds());
             c = false;
         }
-        else if (movimentacao.getEntrada().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) ||
-                movimentacao.getEntrada().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
+        else if (movimentacao.getEntrada().toLocalTime().isBefore(entrada) ||
+                movimentacao.getEntrada().toLocalTime().isAfter(saida))
         {
-            tempoNaMulta += ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), objetoConfig.getInicioExpediente()).getSeconds());
+            tempoNaMulta += ((int) Duration.between(movimentacao.getEntrada().toLocalTime(), entrada).getSeconds());
         }
 
         if (tempoNaMulta < 0)
@@ -217,23 +203,23 @@ public class MovimentacaoService {
 
 
 
-        if(diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getFimExpediente()))
+        if(diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isAfter(saida))
         {
             tempoNaMulta += (diasEstacionado * tempoForaDeExpediente);
         }
-        else if (diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()))
+        else if (diasEstacionado > 0 && movimentacao.getSaida().toLocalTime().isBefore(saida))
         {
             tempoNaMulta += (diasEstacionado * tempoForaDeExpediente);
         }
         else if (diasEstacionado > 0 &&
-                movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getInicioExpediente()) &&
+                movimentacao.getSaida().toLocalTime().isBefore(entrada) &&
                 movimentacao.getSaida().toLocalTime().isAfter(movimentacao.getEntrada().toLocalTime()))
         {
             tempoNaMulta += ((diasEstacionado-1) * tempoForaDeExpediente);
         }
         else if(diasEstacionado > 0 &&
-                movimentacao.getSaida().toLocalTime().isAfter(objetoConfig.getInicioExpediente()) &&
-                movimentacao.getSaida().toLocalTime().isBefore(objetoConfig.getFimExpediente()))
+                movimentacao.getSaida().toLocalTime().isAfter(entrada) &&
+                movimentacao.getSaida().toLocalTime().isBefore(saida))
         {
             tempoNaMulta += tempoForaDeExpediente * diasEstacionado;
         }
@@ -435,18 +421,25 @@ public class MovimentacaoService {
             horaPraDesconto = 0;
         }
 
-        resposta = "Entrada: " + movimentacao.getEntrada() + "\n" +
-                "Saida: " + movimentacao.getSaida() + "\n" +
-                "Condutor: " + movimentacao.getCondutor().getNome() + "\n" +
-                "Veiculo: " + movimentacao.getVeiculo().getPlaca() + "\n" +
-                "Quantidade de horas: " + movimentacao.getTempoHora() + " Minutos: " + movimentacao.getTempoMinuto() + "\n" +
-                "Valor da multa: " + movimentacao.getValorMulta() + "\n" +
-                "Valor total a pagar: " + movimentacao.getValorTotal() + "\n";
+        resposta =
+                "<p><strong>Nota do Registro</strong></p>" +
+                "<p>Entrada: " + movimentacao.getEntrada().getDayOfMonth() + "/" + movimentacao.getEntrada().getMonth() + " " + (movimentacao.getEntrada().getHour() - 3) + ":" + movimentacao.getEntrada().getMinute() + "</p>" +
+                "<p>Saida: " +  movimentacao.getSaida().getDayOfMonth() + "/" + movimentacao.getSaida().getMonth() + " " + (movimentacao.getSaida().getHour() - 3 ) + ":" + movimentacao.getSaida().getMinute() + "</p>" +
+                        "<p>Condutor: " + movimentacao.getCondutor().getNome() + "</p>" +
+                        "<p>Veiculo: " + movimentacao.getVeiculo().getPlaca() + "</p>" +
+                        "<p>Quantidade de horas: " + movimentacao.getTempoHora() + " Minutos: " + movimentacao.getTempoMinuto() + "</p>" +
+                        "<p>Valor da multa: " + movimentacao.getValorMulta() + "</p>" +
+                        "<p>Valor total a pagar: " + movimentacao.getValorTotal() + "</p>";
+
+
 
         if(objetoconfig.isGerarDesconto())
         {
-            resposta += "Quantidade de horas para o desconto: " + horaPraDesconto + "\n" +
-                    "Valor do desconto: " + movimentacao.getValorDesconto() + "\n";
+            resposta +=
+                    "<p>Quantidade de horas para o desconto: " + horaPraDesconto  + "</p>" +
+                            "<p>Valor do desconto: " + movimentacao.getValorDesconto() + "</p>";
+
+
         }
 
 

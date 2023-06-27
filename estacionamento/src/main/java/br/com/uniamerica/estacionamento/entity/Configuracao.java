@@ -9,6 +9,7 @@ import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -27,11 +28,11 @@ public class Configuracao extends AbstractEntity {
 
     @Getter @Setter
     @Column(name = "inicio_do_expediente")
-    private LocalTime inicioExpediente;
+    private LocalDateTime inicioExpediente;
 
     @Getter @Setter
     @Column(name = "fim_do_expediente")
-    private LocalTime fimExpediente;
+    private LocalDateTime fimExpediente;
 
     @Getter @Setter
     @Column(name = "tempo_para_desconto")

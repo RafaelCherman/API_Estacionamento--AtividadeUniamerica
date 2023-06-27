@@ -28,7 +28,7 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
     boolean isInMovimentacao(@Param("id") final Long id);
 
     @Query("select m from Modelo m where m.nome = :nome")
-    Modelo getModeloByNome(@Param("nome") final String nome);
+    Modelo findModeloByNome(@Param("nome") final String nome);
 
 
 }
